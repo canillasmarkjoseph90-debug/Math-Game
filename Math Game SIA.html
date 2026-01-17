@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Game System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Professional app-like palette: Soft blues, greens, whites */
+        :root {
+            --primary: #4A90E2;
+            --secondary: #E8F4FD;
+            --accent: #34D399;
+            --error: #EF4444;
+            --text: #1F2937;
+            --bg: linear-gradient(135deg, #E0F2FE 0%, #F0F9FF 100%);
+            --card-bg: #FFFFFF;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2, h3 {
+            font-weight: 500;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 { font-size: 2em; color: var(--primary); }
+        h2 { font-size: 1.5em; }
+        h3 { font-size: 1.2em; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background: #357ABD;
+            transform: translateY(-2px);
+        }
+
+        .levels {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .level-card {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .level-card:hover {
+            transform: scale(1.02);
+        }
+
+        .level-card h3::before {
+            content: '🎯 ';
+        }
+
+        .activity-panel {
+            margin-top: 25px;
+            background: var(--secondary);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        #activity-list p {
+            margin: 8px 0;
+            padding: 8px;
+            background: var(--card-bg);
+            border-radius: 6px;
+            font-size: 0.9em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        #game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        #lives::before { content: '❤️ '; }
+        #timer::before { content: '⏱️ '; }
+        #score::before { content: '🏆 '; }
+
+        #question-container {
+            margin: 20px 0;
+        }
+
+        #question {
+            font-size: 1.5em;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        #options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .option-btn {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1.2em;
+        }
+
+        #motivation {
+            margin-top: 15px;
+            font-style: italic;
+            color: var(--accent);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        #summary p {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .screen {
+                max-width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Intro Screen -->
+        <div id="intro-screen" class="screen active">
+            <h1>🧮 Math Master</h1>
+            <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+            <button id="start-btn">Start Game</button>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="screen">
+            <h2 id="welcome-msg">Welcome, [Name]!</h2>
+            <div class="levels">
+                <div class="level-card" data-level="easy">
+                    <h3>Easy</h3>
+                    <p>Basic + and - operations</p>
+                    <button class="play-btn">Play</button>
+                </div>
+                <div class="level-card" data-level="intermediate">
+                    <h3>Intermediate</h3>
+                    <p>× and ÷ with mixed operations</p>
+                    <button class="play-btn">Play</button>
+                </div>
+                <div class="level-card" data-level="advanced">
+                    <h3>Advanced</h3>
+                    <p>Mixed operations with time pressure</p>
+                    <button class="play-btn">Play</button>
+                </div>
+            </div>
+            <div class="activity-panel">
+                <h3>Recent Games</h3>
+                <div id="activity-list"></div>
+                <button id="clear-history-btn" style="margin-top: 10px;">Clear History</button>
+            </div>
+            <div class="settings">
+                <button id="toggle-sound">Sound: On</button>
+            </div>
+        </div>
+
+        <!-- Gameplay Screen -->
+        <div id="gameplay" class="screen">
+            <div id="game-header">
+                <span id="lives">3</span>
+                <span id="timer">00:00</span>
+                <span id="score">0</span>
+            </div>
+            <div id="question-container">
+                <p id="question"></p>
+                <div id="options"></div>
+                <input type="number" id="answer-input" placeholder="Your answer" style="display: none;">
+                <button id="submit-btn" style="display: none;">Submit</button>
+            </div>
+            <div id="motivation"></div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="screen">
+            <h2 id="game-over-msg"></h2>
+            <div id="summary">
+                <p>Total Score: <span id="total-score"></span></p>
+                <p>Accuracy: <span id="accuracy"></span>%</p>
+                <p>Time Spent: <span id="time-spent"></span></p>
+            </div>
+            <button id="retry-btn">Retry</button>
+            <button id="back-dashboard-btn">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let playerName = '';
+        let currentLevel = '';
+        let lives = 3;
+        let score = 0;
+        let startTime = 0;
+        let correctAnswers = 0;
+        let totalQuestions = 0;
+        let timerInterval = null;
+        let soundEnabled = true;
+
+        // Motivational messages
+        const motivations = [
+            "Great job! Keep it up!",
+            "You're doing awesome!",
+            "One step closer to mastery!",
+            "Fantastic effort!"
+        ];
+
+        // Sound effects (simple beeps using AudioContext)
+        function playSound(type) {
+            if (!soundEnabled) return;
+            const audioCtx = new AudioContext();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.setValueAtTime(type === 'correct' ? 800 : 400, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // Screen management
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Intro screen
+        document.getElementById('start-btn').addEventListener('click', () => {
+            playerName = document.getElementById('player-name').value.trim();
+            if (!playerName) {
+                alert('Please enter your name!');
+                return;
+            }
+            document.getElementById('welcome-msg').textContent = `Welcome, ${playerName}!`;
+            loadActivity();
+            showScreen('dashboard');
+        });
+
+        // Dashboard
+        document.querySelectorAll('.play-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentLevel = e.target.closest('.level-card').dataset.level;
+                startGame();
+            });
+        });
+
+        function loadActivity() {
+            const activity = JSON.parse(localStorage.getItem('mathGameActivity') || '[]');
+            const list = document.getElementById('activity-list');
+            list.innerHTML = activity.slice(-5).map(a => `<p>${a}</p>`).join('');
+        }
+
+        // Clear history
+        document.getElementById('clear-history-btn').addEventListener('click', () => {
+            localStorage.removeItem('mathGameActivity');
+            loadActivity();
+        });
+
+        // Settings
+        document.getElementById('toggle-sound').addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            document.getElementById('toggle-sound').textContent = `Sound: ${soundEnabled ? 'On' : 'Off'}`;
+        });
+
+        // Gameplay
+        function startGame() {
+            lives = 3;
+            score = 0;
+            correctAnswers = 0;
+            totalQuestions = 0;
+            startTime = Date.now();
+            updateUI();
+            generateQuestion();
+            showScreen('gameplay');
+            if (currentLevel === 'advanced') startTimer();
+        }
+
+        function updateUI() {
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('score').textContent = score;
+        }
+
+        function generateQuestion() {
+            let num1, num2, op, answer;
+            const ops = currentLevel === 'easy' ? ['+', '-'] : ['+', '-', '*', '/'];
+            op = ops[Math.floor(Math.random() * ops.length)];
+            num1 = Math.floor(Math.random() * 10) + 1;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            if (op === '/') {
+                num1 = num1 * num2; // Ensure integer division
+            }
+            answer = eval(`${num1} ${op === '*' ? '*' : op === '/' ? '/' : op} ${num2}`);
+            document.getElementById('question').textContent = `${num1} ${op} ${num2} = ?`;
+            document.getElementById('answer-input').value = '';
+            document.getElementById('options').innerHTML = '';
+
+            if (currentLevel === 'easy') {
+                // Multiple choice
+                const options = [answer, answer + Math.floor(Math.random() * 5) + 1, answer - Math.floor(Math.random() * 5) - 1];
+                options.sort(() => Math.random() - 0.5);
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.textContent = opt;
+                    btn.className = 'option-btn';
+                    btn.addEventListener('click', () => checkAnswer(opt === answer));
+                    document.getElementById('options').appendChild(btn);
+                });
+                document.getElementById('answer-input').style.display = 'none';
+                document.getElementById('submit-btn').style.display = 'none';
+            } else {
+                document.getElementById('answer-input').style.display = 'block';
+                document.getElementById('submit-btn').style.display = 'block';
+            }
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', () => {
+            const userAnswer = parseFloat(document.getElementById('answer-input').value);
+            const correctAnswer = eval(document.getElementById('question').textContent.replace(' = ?', ''));
+            checkAnswer(userAnswer === correctAnswer);
+        });
+
+        function checkAnswer(isCorrect) {
+            totalQuestions++;
+            if (isCorrect) {
+                correctAnswers++;
+                score += 10;
+                if (currentLevel === 'advanced') score += Math.max(0, 10 - Math.floor((Date.now() - startTime) / 1000)); // Speed bonus
+                playSound('correct');
+                document.getElementById('motivation').textContent = motivations[Math.floor(Math.random() * motivations.length)];
+            } else {
+                lives--;
+                playSound('wrong');
+                alert(`Wrong! Correct answer: ${eval(document.getElementById('question').textContent.replace(' = ?', ''))}`);
+                document.getElementById('motivation').textContent = "Don't give up!";
+            }
+            updateUI();
+            if (lives === 0) {
+                endGame(false);
+            } else {
+                setTimeout(generateQuestion, 1000);
+            }
+        }
+
+        function startTimer() {
+            let time = 0;
+            timerInterval = setInterval(() => {
+                time++;
+                document.getElementById('timer').textContent = `${Math.floor(time / 60)}:${(time % 60).toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function endGame(success) {
+            clearInterval(timerInterval);
+            const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+            const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+            document.getElementById('game-over-msg').textContent = success ? `🎉 Congratulations, ${playerName}!` : `❌ You Failed, ${playerName}. Try again!`;
+            document.getElementById('total-score').textContent = score;
+            document.getElementById('accuracy').textContent = accuracy;
+            document.getElementById('time-spent').textContent = `${Math.floor(timeSpent / 60)}:${(timeSpent % 60).toString().padStart(2, '0')}`;
+            saveActivity();
+            showScreen('game-over');
+        }
+
+        function saveActivity() {
+            const activity = JSON.parse(localStorage.getItem('mathGameActivity') || '[]');
+            activity.push(`${new Date().toLocaleString()}: ${currentLevel} - Score: ${score}, Accuracy: ${Math.round((correctAnswers / totalQuestions) * 100)}%`);
+            localStorage.setItem('mathGameActivity', JSON.stringify(activity));
+        }
+
+        // Game Over buttons
+        document.getElementById('retry-btn').addEventListener('click', () => startGame());
+        document.getElementById('back-dashboard-btn').addEventListener('click', () => showScreen('dashboard'));
+    </script>
+</body>
+</html>
